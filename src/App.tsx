@@ -27,10 +27,7 @@ function App() {
         <div className="hero-container">
           <h1 className="hero-title">Strategy Cockpit</h1>
           <p className="hero-tagline">AI-powered strategic analysis</p>
-          <p className="hero-description">
-            Transform your business decisions with intelligent strategy analysis. 
-            Get actionable insights powered by advanced AI technology.
-          </p>
+        
           <div className="hero-cta">
             <form onSubmit={handleSubmit} className="email-form">
               <input

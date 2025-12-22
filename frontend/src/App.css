@@ -96,36 +96,6 @@
   margin-bottom: 1.5rem;
 }
 
-.email-form {
-  display: flex;
-  gap: 1rem;
-  max-width: 600px;
-  flex-wrap: wrap;
-}
-
-.email-input {
-  flex: 1;
-  min-width: 280px;
-  padding: 0.875rem 1.25rem;
-  background: #ffffff;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  color: #1a1a1a;
-  font-size: 1rem;
-  outline: none;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.email-input::placeholder {
-  color: #8a8a8a;
-}
-
-.email-input:focus {
-  border-color: #1a1a1a;
-  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
-}
-
 .cta-button {
   padding: 0.875rem 2rem;
   background: #1a1a1a;
@@ -264,14 +234,6 @@
 
   .feature-card {
     padding: 2rem;
-  }
-
-  .email-form {
-    flex-direction: column;
-  }
-
-  .email-input {
-    min-width: 100%;
   }
 
   .cta-button {

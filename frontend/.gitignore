@@ -22,10 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Misc
-.env
-coverage
-tmp
-temp
-Thumbs.db

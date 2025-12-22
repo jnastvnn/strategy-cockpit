@@ -1,14 +1,8 @@
-import { useState } from 'react'
 import './App.css'
 
 function App() {
-  const [email, setEmail] = useState('')
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Email submitted:', email)
+  const handleGetStarted = () => {
     alert('Thank you for your interest! We\'ll be in touch soon.')
-    setEmail('')
   }
 
   return (
@@ -29,19 +23,9 @@ function App() {
           <p className="hero-tagline">AI-powered strategic analysis</p>
         
           <div className="hero-cta">
-            <form onSubmit={handleSubmit} className="email-form">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="email-input"
-                required
-              />
-              <button type="submit" className="cta-button">
-                Get Started
-              </button>
-            </form>
+            <button onClick={handleGetStarted} className="cta-button">
+              Get Started
+            </button>
           </div>
           <p className="hero-note">Free trial • No credit card required</p>
         </div>

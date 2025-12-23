@@ -4,11 +4,127 @@ import {
   UserButton,
 } from '@neondatabase/neon-js/auth/react/ui';
 import { Link } from 'react-router-dom';
-import './home.css'; // We'll create a dedicated style for this main view
+import { useEffect, useMemo, useState } from 'react';
+import { authClient } from '../lib/auth';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+type Report = {
+  id: number;
+  title: string | null;
+  planText: string;
+  reportText: string;
+  createdAt: string;
+};
 
 export function Home() {
-  const handlePlaceholderAction = (label: string) => {
-    alert(`${label} is coming soon.`);
+  const [planText, setPlanText] = useState('');
+  const [reports, setReports] = useState<Report[]>([]);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const selectedReport = useMemo(() => {
+    if (!reports.length) {
+      return null;
+    }
+    if (selectedReportId) {
+      return reports.find((report) => report.id === selectedReportId) || reports[0];
+    }
+    return reports[0];
+  }, [reports, selectedReportId]);
+
+  const resolveAuthUserId = (sessionResult: unknown) => {
+    const typed = sessionResult as {
+      user?: { id?: string };
+      data?: { user?: { id?: string }; session?: { user?: { id?: string } } };
+    };
+    return (
+      typed?.user?.id ||
+      typed?.data?.user?.id ||
+      typed?.data?.session?.user?.id ||
+      null
+    );
+  };
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const sessionResult = await authClient.getSession();
+        const userId = resolveAuthUserId(sessionResult);
+        setAuthUserId(userId);
+      } catch (_error) {
+        setAuthUserId(null);
+      }
+    };
+
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (!authUserId) {
+      return;
+    }
+
+    const loadReports = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/reports`, {
+          headers: {
+            'x-user-id': authUserId,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Unable to load report history.');
+        }
+        const data = await response.json();
+        setReports(data.reports || []);
+        if (data.reports?.length) {
+          setSelectedReportId(data.reports[0].id);
+        }
+      } catch (error) {
+        setStatusMessage(error instanceof Error ? error.message : 'Unable to load report history.');
+      }
+    };
+
+    loadReports();
+  }, [authUserId]);
+
+  const handleCreateReport = async () => {
+    if (!planText.trim()) {
+      setStatusMessage('Add a business plan to generate a report.');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authUserId ? { 'x-user-id': authUserId } : {}),
+        },
+        body: JSON.stringify({ planText }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Failed to generate report.');
+      }
+
+      const data = await response.json();
+      const newReport = data.report as Report;
+      setReports((prev) => [newReport, ...prev]);
+      setSelectedReportId(newReport.id);
+      setPlanText('');
+      setStatusMessage('Report generated.');
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Failed to generate report.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -17,30 +133,12 @@ export function Home() {
         <div className="dashboard">
           <aside className="sidebar">
             <div className="sidebar-header">
-              <span className="logo-text">Strategy Cockpit</span>
+              <span className="logo-text">Cruxlens</span>
             </div>
             <nav className="sidebar-nav">
               <Link to="/" className="nav-item active">
                 Dashboard
               </Link>
-              <button
-                className="nav-item nav-button"
-                onClick={() => handlePlaceholderAction('Scenario builder')}
-              >
-                Scenario Builder
-              </button>
-              <button
-                className="nav-item nav-button"
-                onClick={() => handlePlaceholderAction('Competitive intel')}
-              >
-                Competitive Intel
-              </button>
-              <button
-                className="nav-item nav-button"
-                onClick={() => handlePlaceholderAction('Reports')}
-              >
-                Reports
-              </button>
               <Link to="/account/profile" className="nav-item">
                 Account
               </Link>
@@ -56,158 +154,216 @@ export function Home() {
           </aside>
 
           <main className="main-content">
-            <header className="top-header">
-              <div>
-                <h1>Mission Control</h1>
-                <p className="dashboard-subtitle">
-                  Your strategic intelligence workspace.
-                </p>
+            <div className="dashboard-grid">
+              <div className="dashboard-intro">
+                <h2>Strategy Dashboard</h2>
+                <p>Generate analysis reports from your business plans.</p>
               </div>
-              <div className="top-actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => handlePlaceholderAction('Export')}
-                >
-                  Export Brief
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handlePlaceholderAction('Launch analysis')}
-                >
-                  Launch Analysis
-                </button>
-              </div>
-            </header>
-
-            <section className="stats-grid">
-              <div className="stat-card">
-                <span className="stat-label">Active Scenarios</span>
-                <span className="stat-value">04</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Signals Tracked</span>
-                <span className="stat-value">128</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Opportunities</span>
-                <span className="stat-value">17</span>
-              </div>
-            </section>
-
-            <section className="welcome-section">
-              <h2>Quick Actions</h2>
-              <p>Jump into the workflows you use most. These are placeholders for now.</p>
-              <div className="quick-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handlePlaceholderAction('Run new scenario')}
-                >
-                  Run New Scenario
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => handlePlaceholderAction('Invite collaborators')}
-                >
-                  Invite Collaborators
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => handlePlaceholderAction('Review insights')}
-                >
-                  Review Insights
-                </button>
-              </div>
-            </section>
-
-            <section className="recent-activity">
-              <h3>Recent Activity</h3>
-              <div className="activity-list">
-                <div className="activity-item">
-                  <span className="activity-dot"></span>
-                  <div className="activity-details">
-                    <span className="activity-text">
-                      Placeholder report generated for Q3 market shift.
-                    </span>
-                    <span className="activity-time">2 hours ago</span>
+              <div className="dashboard-primary">
+                <section className="report-compose">
+                  <h2>Create a new report</h2>
+                  <p>Paste a business plan and generate a strategy report.</p>
+                  <textarea
+                    className="report-textarea"
+                    placeholder="Paste your business plan here..."
+                    value={planText}
+                    onChange={(event) => setPlanText(event.target.value)}
+                  />
+                  <div className="report-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleCreateReport}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Generating...' : 'Generate Report'}
+                    </button>
                   </div>
-                </div>
-                <div className="activity-item">
-                  <span className="activity-dot"></span>
-                  <div className="activity-details">
-                    <span className="activity-text">
-                      New signal feed connected to competitor watchlist.
-                    </span>
-                    <span className="activity-time">Yesterday</span>
+                  {statusMessage && (
+                    <p className="report-status">{statusMessage}</p>
+                  )}
+                </section>
+
+                <section className="report-viewer">
+                  <div className="report-viewer-header">
+                    <h2>Report output</h2>
+                    {selectedReport ? (
+                      <span className="report-meta">
+                        {new Date(selectedReport.createdAt).toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="report-meta">No reports yet</span>
+                    )}
                   </div>
-                </div>
+                  {selectedReport ? (
+                    <>
+                      <h3 className="report-title">
+                        {selectedReport.title || 'Untitled report'}
+                      </h3>
+                      <div
+                        className="report-output"
+                        dangerouslySetInnerHTML={{ __html: selectedReport.reportText }}
+                      />
+                    </>
+                  ) : (
+                    <p className="report-empty">
+                      Your generated reports will appear here.
+                    </p>
+                  )}
+                </section>
               </div>
-            </section>
+              <aside className="history-panel" id="reports">
+                <h3>Report history</h3>
+                <div className="history-list">
+                  {reports.length ? (
+                    reports.map((report) => (
+                      <button
+                        key={report.id}
+                        className={`history-item${
+                          report.id === selectedReport?.id ? ' active' : ''
+                        }`}
+                        onClick={() => setSelectedReportId(report.id)}
+                      >
+                        <span className="history-title">
+                          {report.title || 'Untitled report'}
+                        </span>
+                        <span className="history-time">
+                          {new Date(report.createdAt).toLocaleDateString()}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="history-empty">No reports yet.</p>
+                  )}
+                </div>
+              </aside>
+            </div>
           </main>
         </div>
       </SignedIn>
 
       <SignedOut>
-        <div className="main-app">
-          {/* Navigation */}
-          <nav className="main-nav">
-            <div className="main-nav-container">
-              <div className="main-logo">
-                <span className="main-logo-text">Strategy Cockpit</span>
-              </div>
-              <div className="main-nav-actions">
-                <Link to="/auth/sign-in" className="main-signin-button">
-                  Sign In
+        <div className="landing">
+          <header className="landing-header">
+            <span className="landing-brand">Cruxlens</span>
+            <Link to="/auth/sign-in" className="btn btn-primary">
+              Join early access
+            </Link>
+          </header>
+
+          <main className="landing-main">
+            <section className="landing-hero">
+              <p className="landing-eyebrow">Early Access — Limited Spots</p>
+              <h1>Great strategies are not invented. They are recognized.</h1>
+              <p className="landing-lead">
+                Like chess, business success is a series of patterns. Our Pattern Recognition
+                Engine™ maps your idea against proven strategic patterns — consultant-level
+                thinking, at startup speed and price.
+              </p>
+              <div className="landing-hero-actions">
+                <Link to="/auth/sign-in" className="btn btn-primary">
+                  Join early access
                 </Link>
-              </div>
-            </div>
-          </nav>
-
-          {/* Hero Section */}
-          <section className="main-hero">
-            <div className="main-hero-container">
-              <h1 className="main-hero-title">Strategy Cockpit</h1>
-              <p className="main-hero-tagline">AI-powered strategic analysis</p>
-
-              <div className="main-hero-cta">
-                <Link to="/auth/sign-in" className="main-cta-button">
-                  Launch Analysis
-                </Link>
-              </div>
-              <p className="main-hero-note">System online • Intelligence active</p>
-            </div>
-          </section>
-
-          {/* Features Section */}
-          <section className="main-features">
-            <div className="main-features-container">
-              <h2 className="main-features-title">Core Capabilities</h2>
-              <div className="main-features-grid">
-                <div className="main-feature-card">
-                  <h3 className="main-feature-title">AI-Powered</h3>
-                  <p className="main-feature-description">
-                    Leverage cutting-edge AI to analyze your business strategy and identify opportunities.
-                  </p>
-                </div>
-                <div className="main-feature-card">
-                  <h3 className="main-feature-title">Data-Driven</h3>
-                  <p className="main-feature-description">
-                    Make informed decisions with comprehensive data analysis and visualizations.
-                  </p>
-                </div>
-                <div className="main-feature-card">
-                  <h3 className="main-feature-title">Fast & Efficient</h3>
-                  <p className="main-feature-description">
-                    Get instant results without lengthy manual analysis. Save time and resources.
-                  </p>
+                <div className="landing-hero-meta">
+                  <span>No credit card required</span>
+                  <span>Join 200+ strategists</span>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* Footer */}
-          <footer className="main-footer">
-            <div className="main-footer-container">
-              <p>&copy; 2025 Strategy Cockpit. All rights reserved.</p>
+            <section className="landing-section">
+              <p className="landing-kicker">Strategy Patterns</p>
+              <h2>The Three Questions That Matter</h2>
+              <p className="landing-section-lead">
+                We help founders answer the only questions that matter in strategy.
+              </p>
+              <div className="landing-grid">
+                <article className="landing-card">
+                  <h3>How will you create advantage?</h3>
+                  <p>
+                    Like a chess grandmaster sees the board, experienced strategists recognize
+                    patterns. We give you that vision.
+                  </p>
+                </article>
+                <article className="landing-card">
+                  <h3>How will you be unique in the market?</h3>
+                  <p>
+                    Differentiation isn't about being different — it's about being meaningfully
+                    different. Pattern recognition reveals what truly sets winners apart.
+                  </p>
+                </article>
+                <article className="landing-card">
+                  <h3>How will you sustain that advantage?</h3>
+                  <p>
+                    If the advantage cannot survive contact with reality, it is not strategy. We
+                    stress-test your ideas against proven patterns.
+                  </p>
+                </article>
+              </div>
+            </section>
+
+            <section className="landing-section">
+              <p className="landing-kicker">Early Access Benefits</p>
+              <div className="landing-grid">
+                <article className="landing-card">
+                  <h3>See the board like a grandmaster</h3>
+                  <p>
+                    Join founders and strategists who are learning to recognize the patterns that
+                    drive success.
+                  </p>
+                </article>
+                <article className="landing-card">
+                  <h3>Startup speed, consultant depth</h3>
+                  <p>
+                    Strategic thinking at consultant level, delivered at startup speed. No more
+                    waiting months for insights that should take hours.
+                  </p>
+                </article>
+                <article className="landing-card">
+                  <h3>Shape the Pattern Engine</h3>
+                  <p>
+                    Your feedback directly influences how patterns are recognized and applied. Early
+                    users become co-creators of the engine.
+                  </p>
+                </article>
+                <article className="landing-card">
+                  <h3>Weekly pattern insights</h3>
+                  <p>
+                    Receive curated breakdowns of strategic patterns from real cases — the same
+                    patterns that separate good strategies from great ones.
+                  </p>
+                </article>
+              </div>
+            </section>
+
+            <section className="landing-section landing-emphasis">
+              <p className="landing-kicker">Built by ex-consultants & founders</p>
+              <h2>Pattern Recognition Engine™</h2>
+              <p className="landing-section-lead">MVP launching Q1 2025</p>
+            </section>
+
+            <section className="landing-cta">
+              <div>
+                <h2>Ready to see the board like a grandmaster?</h2>
+                <p>
+                  Strategic thinking at consultant level, at startup speed and price. Join founders
+                  who recognize the patterns others miss.
+                </p>
+              </div>
+              <Link to="/auth/sign-in" className="btn btn-primary">
+                Join early access
+              </Link>
+            </section>
+          </main>
+
+          <footer className="landing-footer">
+            <div className="landing-footer-brand">
+              <span className="landing-footer-mark">C</span>
+              <span>Cruxlens</span>
+            </div>
+            <div className="landing-footer-meta">
+              <span>© 2025 Cruxlens. All rights reserved.</span>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms</Link>
             </div>
           </footer>
         </div>

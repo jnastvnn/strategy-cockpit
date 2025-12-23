@@ -1,5 +1,5 @@
 import { AuthView } from '@neondatabase/neon-js/auth/react/ui';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Compass, Sparkles, BrainCircuit, ShieldCheck } from 'lucide-react';
 
 export function Auth() {
@@ -11,7 +11,7 @@ export function Auth() {
         <div className="brand-content">
           <div className="brand-header">
             <Compass size={32} className="logo-icon" />
-            <span className="logo-text">Strategy Cockpit</span>
+            <span className="logo-text">Cruxlens</span>
           </div>
           
           <div className="brand-hero">
@@ -54,6 +54,9 @@ export function Auth() {
       
       <div className="auth-form-side">
         <div className="auth-container-box">
+          <Link to="/" className="auth-back-link">
+            Back to landing
+          </Link>
           <AuthView pathname={pathname} />
         </div>
       </div>

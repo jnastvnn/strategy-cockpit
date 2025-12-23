@@ -1,0 +1,369 @@
+The 4-ball agent
+
+import { webSearchTool, Agent, AgentInputItem, Runner, withTrace } from "@openai/agents";
+import { z } from "zod";
+
+
+// Tool definitions
+const webSearchPreview = webSearchTool({
+  searchContextSize: "medium",
+  userLocation: {
+    type: "approximate"
+  }
+})
+const 4BallModelSchema = z.object({ agent: z.string(), opportunity_space: z.object({ competitor_oversight: z.object({ blind_spots: z.array(z.string()), poor_executions: z.array(z.string()) }), innovation_core: z.object({ type: z.string(), description: z.string(), moat_strength: z.enum(["low", "medium", "high"]) }), changing_circumstances: z.object({ regulatory_shifts: z.array(z.string()), tech_tailwinds: z.array(z.string()), consumer_behavior: z.array(z.string()) }), reframing: z.object({ old_frame: z.string(), new_frame: z.string() }) }), checkpoint_validation: z.boolean() });
+const 4BallModel = new Agent({
+  name: "4-Ball Model",
+  instructions: `You are the Market Scout. Your task is to analyze the business case through the 4-Ball Model. You must validate the \"Opportunity Space\" by checking for:
+Competitor Oversight: What are incumbents ignoring?
+Innovation: What is the proprietary \"secret sauce\" (tech, process, or insight)?
+Changing Circumstances: What tailwinds (regulation, tech shifts, social trends) make this possible now?
+Seeing Differently: How is this reframing the problem?
+
+You take a business plan as a input and may use the web search.`,
+  model: "gpt-5-nano",
+  tools: [
+    webSearchPreview
+  ],
+  outputType: 4BallModelSchema,
+  modelSettings: {
+    reasoning: {
+      effort: "medium"
+    },
+    store: true
+  }
+});
+
+type WorkflowInput = { input_as_text: string };
+
+
+// Main code entrypoint
+export const runWorkflow = async (workflow: WorkflowInput) => {
+  return await withTrace("4-ball", async () => {
+    const state = {
+
+    };
+    const conversationHistory: AgentInputItem[] = [
+      { role: "user", content: [{ type: "input_text", text: workflow.input_as_text }] }
+    ];
+    const runner = new Runner({
+      traceMetadata: {
+        __trace_source__: "agent-builder",
+        workflow_id: "wf_694aa129199c8190afff8e331daed50a065aa5e5892c761c"
+      }
+    });
+    const 4BallModelResultTemp = await runner.run(
+      4BallModel,
+      [
+        ...conversationHistory
+      ]
+    );
+    conversationHistory.push(...4BallModelResultTemp.newItems.map((item) => item.rawItem));
+
+    if (!4BallModelResultTemp.finalOutput) {
+        throw new Error("Agent result is undefined");
+    }
+
+    const 4BallModelResult = {
+      output_text: JSON.stringify(4BallModelResultTemp.finalOutput),
+      output_parsed: 4BallModelResultTemp.finalOutput
+    };
+    return 4BallModelResult;
+  });
+}
+
+
+
+{
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "The agent analyzing the market opportunity space.",
+      "default": ""
+    },
+    "opportunity_space": {
+      "type": "object",
+      "properties": {
+        "competitor_oversight": {
+          "type": "object",
+          "properties": {
+            "blind_spots": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Areas competitors fail to see or address.",
+              "default": []
+            },
+            "poor_executions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Instances of competitors' failed or suboptimal implementations.",
+              "default": []
+            }
+          },
+          "required": [
+            "blind_spots",
+            "poor_executions"
+          ],
+          "additionalProperties": false
+        },
+        "innovation_core": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Type or category of innovation at the core of the opportunity.",
+              "default": ""
+            },
+            "description": {
+              "type": "string",
+              "description": "A description providing context on the innovation.",
+              "default": ""
+            },
+            "moat_strength": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "How strong the competitive moat is.",
+              "default": ""
+            }
+          },
+          "required": [
+            "type",
+            "description",
+            "moat_strength"
+          ],
+          "additionalProperties": false
+        },
+        "changing_circumstances": {
+          "type": "object",
+          "properties": {
+            "regulatory_shifts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Regulatory changes affecting the opportunity space.",
+              "default": []
+            },
+            "tech_tailwinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Technological advancements favoring the opportunity.",
+              "default": []
+            },
+            "consumer_behavior": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Shifts in consumer behavior relevant to the opportunity.",
+              "default": []
+            }
+          },
+          "required": [
+            "regulatory_shifts",
+            "tech_tailwinds",
+            "consumer_behavior"
+          ],
+          "additionalProperties": false
+        },
+        "reframing": {
+          "type": "object",
+          "properties": {
+            "old_frame": {
+              "type": "string",
+              "description": "The previous perspective or frame for the opportunity.",
+              "default": ""
+            },
+            "new_frame": {
+              "type": "string",
+              "description": "The new or reframed opportunity perspective.",
+              "default": ""
+            }
+          },
+          "required": [
+            "old_frame",
+            "new_frame"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "competitor_oversight",
+        "innovation_core",
+        "changing_circumstances",
+        "reframing"
+      ],
+      "additionalProperties": false
+    },
+    "checkpoint_validation": {
+      "type": "boolean",
+      "description": "Whether the checkpoint has been validated as correct.",
+      "default": false
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "agent",
+    "opportunity_space",
+    "checkpoint_validation"
+  ],
+  "title": "market_scout_opportunity_space"
+}
+
+
+
+The crux agent
+
+import { webSearchTool, Agent, AgentInputItem, Runner, withTrace } from "@openai/agents";
+import { z } from "zod";
+
+
+// Tool definitions
+const webSearchPreview = webSearchTool({
+  searchContextSize: "medium",
+  userLocation: {
+    type: "approximate"
+  }
+})
+const MyAgentSchema = z.object({ agent: z.string(), crux_analysis: z.object({ distilled_bottleneck: z.string(), leverage_point: z.string(), justification: z.object({ cascade_logic: z.string(), root_cause_identified: z.string() }), solvability_score: z.number() }), checkpoint_solvability_confirmed: z.boolean() });
+const myAgent = new Agent({
+  name: "My agent",
+  instructions: `You are the Strategist. Using Richard Rumelt’s framework, your job is to identify the Crux of the challenge.
+Distillation: Strip away the noise to find the one bottleneck that matters most.
+Coherence: Ensure the proposed path isn't a \"wish list\" but a focused response to the Crux.
+Root Cause: Use cascade logic to prove why solving this specific point unlocks the rest of the opportunity.
+
+Use the provided business plan and web search.`,
+  model: "gpt-5-nano",
+  tools: [
+    webSearchPreview
+  ],
+  outputType: MyAgentSchema,
+  modelSettings: {
+    reasoning: {
+      effort: "high"
+    },
+    store: true
+  }
+});
+
+type WorkflowInput = { input_as_text: string };
+
+
+// Main code entrypoint
+export const runWorkflow = async (workflow: WorkflowInput) => {
+  return await withTrace("The Crux", async () => {
+    const state = {
+
+    };
+    const conversationHistory: AgentInputItem[] = [
+      { role: "user", content: [{ type: "input_text", text: workflow.input_as_text }] }
+    ];
+    const runner = new Runner({
+      traceMetadata: {
+        __trace_source__: "agent-builder",
+        workflow_id: "wf_694aa7e792588190a9126dfe39052c1e017fca81ffe95065"
+      }
+    });
+    const myAgentResultTemp = await runner.run(
+      myAgent,
+      [
+        ...conversationHistory
+      ]
+    );
+    conversationHistory.push(...myAgentResultTemp.newItems.map((item) => item.rawItem));
+
+    if (!myAgentResultTemp.finalOutput) {
+        throw new Error("Agent result is undefined");
+    }
+
+    const myAgentResult = {
+      output_text: JSON.stringify(myAgentResultTemp.finalOutput),
+      output_parsed: myAgentResultTemp.finalOutput
+    };
+    return myAgentResult;
+  });
+}
+
+
+{
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "The name of the agent performing the analysis.",
+      "default": ""
+    },
+    "crux_analysis": {
+      "type": "object",
+      "properties": {
+        "distilled_bottleneck": {
+          "type": "string",
+          "description": "A brief summary of the central bottleneck or obstacle.",
+          "default": ""
+        },
+        "leverage_point": {
+          "type": "string",
+          "description": "The most strategic intervention point identified.",
+          "default": ""
+        },
+        "justification": {
+          "type": "object",
+          "properties": {
+            "cascade_logic": {
+              "type": "string",
+              "description": "Explanation of the cascade of effects that solving the bottleneck would have.",
+              "default": ""
+            },
+            "root_cause_identified": {
+              "type": "string",
+              "description": "Description of the underlying root cause that has been identified.",
+              "default": ""
+            }
+          },
+          "required": [
+            "cascade_logic",
+            "root_cause_identified"
+          ],
+          "additionalProperties": false,
+          "description": "Details that justify the leverage point chosen."
+        },
+        "solvability_score": {
+          "type": "number",
+          "description": "Score between 1-10 assessing how solvable the situation is."
+        }
+      },
+      "required": [
+        "distilled_bottleneck",
+        "leverage_point",
+        "justification",
+        "solvability_score"
+      ],
+      "additionalProperties": false,
+      "description": "Analysis of the main bottleneck and leverage point."
+    },
+    "checkpoint_solvability_confirmed": {
+      "type": "boolean",
+      "description": "Confirmation that the solvability score has been checked and confirmed.",
+      "default": false
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "agent",
+    "crux_analysis",
+    "checkpoint_solvability_confirmed"
+  ],
+  "title": "crux_analysis_report"
+}

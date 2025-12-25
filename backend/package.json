@@ -11,10 +11,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@neondatabase/neon-js": "^0.1.0-beta.19",
     "@neondatabase/serverless": "^1.0.2",
+    "@openai/agents-openai": "^0.0.8",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

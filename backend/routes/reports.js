@@ -1,10 +1,10 @@
-const express = require('express');
-const { pool } = require('../db');
-const {
+import express from 'express';
+import { pool } from '../db/index.js';
+import {
   generateReport,
   parseReportJson,
   renderReportHtml,
-} = require('../services/openai');
+} from '../services/openai.js';
 
 const router = express.Router();
 
@@ -90,4 +90,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

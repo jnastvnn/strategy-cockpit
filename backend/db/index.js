@@ -1,5 +1,7 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+import pg from 'pg';
+import 'dotenv/config';
+
+const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
   console.warn('DATABASE_URL is not set. Database connections will fail.');
@@ -64,4 +66,4 @@ const initDb = async () => {
   }
 };
 
-module.exports = { pool, initDb };
+export { pool, initDb };

@@ -16,19 +16,9 @@ const initDb = async () => {
   try {
     client = await pool.connect();
     await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    await client.query(`
       CREATE TABLE IF NOT EXISTS reports (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-        auth_user_id TEXT,
+        auth_user_id TEXT NOT NULL,
         title VARCHAR(255),
         plan_text TEXT NOT NULL,
         report_text TEXT NOT NULL,
@@ -42,13 +32,29 @@ const initDb = async () => {
     `);
 
     await client.query(`
-      CREATE INDEX IF NOT EXISTS reports_created_at_idx
-      ON reports (created_at DESC);
+      CREATE TABLE IF NOT EXISTS user_vector_stores (
+        auth_user_id TEXT PRIMARY KEY,
+        vector_store_id TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     await client.query(`
-      CREATE INDEX IF NOT EXISTS reports_user_id_idx
-      ON reports (user_id);
+      CREATE TABLE IF NOT EXISTS report_vector_files (
+        id SERIAL PRIMARY KEY,
+        report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+        auth_user_id TEXT NOT NULL,
+        vector_store_id TEXT NOT NULL,
+        file_id TEXT NOT NULL,
+        vector_store_file_id TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS reports_created_at_idx
+      ON reports (created_at DESC);
     `);
 
     await client.query(`
@@ -56,7 +62,27 @@ const initDb = async () => {
       ON reports (auth_user_id);
     `);
 
-    console.log('Database initialized: users + reports tables ready.');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS user_vector_stores_vector_store_id_idx
+      ON user_vector_stores (vector_store_id);
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS report_vector_files_report_id_idx
+      ON report_vector_files (report_id);
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS report_vector_files_auth_user_id_idx
+      ON report_vector_files (auth_user_id);
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS report_vector_files_file_id_idx
+      ON report_vector_files (file_id);
+    `);
+
+    console.log('Database initialized: reports + vector tables ready.');
   } catch (err) {
     console.error('Error initializing database:', err);
   } finally {

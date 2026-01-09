@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import { initDb } from './db/index.js';
-import authRoutes from './routes/auth.js';
 import reportRoutes from './routes/reports.js';
 
 const app = express();
@@ -14,7 +13,6 @@ app.use(express.json());
 // Initialize DB
 initDb();
 
-app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 
 app.get('/api/health', (_req, res) => {

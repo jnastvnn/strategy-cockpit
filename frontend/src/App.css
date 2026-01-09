@@ -19,7 +19,7 @@
   --secondary: var(--accent);
   --secondary-foreground: var(--ink);
   --muted: var(--accent);
-  --muted-foreground: var(--muted);
+  --muted-foreground: #6f655a;
   --accent-foreground: var(--ink);
   --destructive: #dc2626;
   --input: var(--border);
@@ -143,7 +143,20 @@
 
 .auth-container-box .text-muted-foreground,
 .auth-container-box .text-secondary-foreground {
-  color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.auth-container-box input,
+.auth-container-box textarea,
+.auth-container-box select {
+  background-color: var(--paper);
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+.auth-container-box input::placeholder,
+.auth-container-box textarea::placeholder {
+  color: var(--muted-foreground);
 }
 
 .auth-container-box a {
@@ -275,7 +288,9 @@
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -367,6 +382,8 @@
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 .landing {
@@ -558,9 +575,11 @@
 
 .dashboard {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background-color: var(--parchment);
   border-top: 6px solid var(--crimson);
+  overflow: hidden;
 }
 
 .top-header {
@@ -621,7 +640,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: 1.5rem;
-  align-items: start;
+  align-items: stretch;
   max-width: 1040px;
   width: 100%;
   margin: 0 auto;
@@ -635,6 +654,7 @@
   max-width: 720px;
   width: 100%;
   justify-self: start;
+  align-self: stretch;
   grid-column: 1 / 2;
   grid-row: 2;
 }
@@ -716,6 +736,19 @@
   margin-bottom: 1rem;
 }
 
+.report-viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.report-download[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .report-meta {
   font-size: 0.8rem;
   color: var(--muted);
@@ -755,7 +788,8 @@
   top: 2rem;
   grid-column: 2 / 3;
   grid-row: 2;
-  min-height: 560px;
+  max-height: calc(100vh - 8rem);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -771,6 +805,8 @@
   flex-direction: column;
   gap: 0.75rem;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .history-item {
@@ -819,6 +855,8 @@
   .sidebar {
     width: 100%;
     min-height: auto;
+    height: auto;
+    overflow-y: visible;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
@@ -849,6 +887,7 @@
 
   .history-panel {
     position: static;
+    max-height: none;
   }
 
   .account-title {

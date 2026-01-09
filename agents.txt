@@ -367,3 +367,254 @@ export const runWorkflow = async (workflow: WorkflowInput) => {
   ],
   "title": "crux_analysis_report"
 }
+
+Business Model Pattern agent
+
+import { fileSearchTool, Agent, AgentInputItem, Runner, withTrace } from "@openai/agents";
+import { z } from "zod";
+
+
+// Tool definitions
+const fileSearch = fileSearchTool([
+  "vs_695faa4ec07481918e7ec49bcaed5cf9"
+])
+const MyAgentSchema = z.object({ opening_paragraph: z.string(), identified_patterns: z.array(z.object({ pattern_name: z.string(), description: z.string(), reasoning: z.object({ logic: z.string(), fit_indicators: z.array(z.string()) }) })) });
+const myAgent = new Agent({
+  name: "My agent",
+  instructions: `You are a Business Model Strategist with deep expertise in the Strategyzer Business Model Pattern Library and an extended set of custom patterns (e.g., Market Explorers, Resource Castles, Activity Differentiators, Revenue & Cost Differentiators). Your task is to analyze an opportunity, concept, or venture and identify the most suitable business model pattern(s) drawn from these libraries.
+You must articulate your strategic reasoning step by step before selecting and stating your conclusions or recommendations.
+Use relevant concepts such as:
+Core logic behind patterns (e.g., Product-as-a-Service, Freemium, Razor & Blade, Multi-Sided Platform)
+How patterns address value creation, delivery, and capture
+Pattern-fit with customer jobs, economics, and strategic context
+Your output must follow this JSON schema exactly.
+📌 Remember:
+A business model pattern is a reusable “design move” that explains how an organization creates, delivers, and captures value, helping rethink a business model beyond traditional product, price, or technology competition.`,
+  model: "gpt-4.1",
+  tools: [
+    fileSearch
+  ],
+  outputType: MyAgentSchema,
+  modelSettings: {
+    temperature: 1,
+    topP: 1,
+    toolChoice: "required",
+    maxTokens: 2048,
+    store: true
+  }
+});
+
+type WorkflowInput = { input_as_text: string };
+
+
+// Main code entrypoint
+export const runWorkflow = async (workflow: WorkflowInput) => {
+  return await withTrace("Business Model Pattern Identification", async () => {
+    const conversationHistory: AgentInputItem[] = [
+      { role: "user", content: [{ type: "input_text", text: workflow.input_as_text }] }
+    ];
+    const runner = new Runner({
+      traceMetadata: {
+        __trace_source__: "agent-builder",
+        workflow_id: "wf_695fa949e7b081909b1395fefc515f1407abb36cb3df2651"
+      }
+    });
+    const myAgentResultTemp = await runner.run(
+      myAgent,
+      [
+        ...conversationHistory
+      ]
+    );
+    conversationHistory.push(...myAgentResultTemp.newItems.map((item) => item.rawItem));
+
+    if (!myAgentResultTemp.finalOutput) {
+        throw new Error("Agent result is undefined");
+    }
+
+    const myAgentResult = {
+      output_text: JSON.stringify(myAgentResultTemp.finalOutput),
+      output_parsed: myAgentResultTemp.finalOutput
+    };
+    const endResult = undefined;
+    return endResult;
+  });
+}
+schema:
+{
+  "type": "object",
+  "properties": {
+    "opening_paragraph": {
+      "type": "string",
+      "description": "Introductory paragraph explaining the purpose and framing of the business model pattern analysis.",
+      "default": ""
+    },
+    "identified_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pattern_name": {
+            "type": "string",
+            "description": "Canonical name of the business model pattern (e.g. 'From Product to Service').",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "description": "How this pattern manifests in the specific business context.",
+            "default": ""
+          },
+          "reasoning": {
+            "type": "object",
+            "properties": {
+              "logic": {
+                "type": "string",
+                "description": "Explanation of why this pattern applies, linking observed facts to the pattern.",
+                "default": ""
+              },
+              "fit_indicators": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Concrete indicators or signals that justify selecting this pattern.",
+                "default": []
+              }
+            },
+            "required": [
+              "logic",
+              "fit_indicators"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "pattern_name",
+          "description",
+          "reasoning"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Best-fit business model patterns with reasoning for each",
+      "default": []
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "opening_paragraph",
+    "identified_patterns"
+  ],
+  "title": "response_schema"
+}
+
+Rumelt’s 5 agent:
+
+    import { z } from "zod";
+    import { Agent, AgentInputItem, Runner, withTrace } from "@openai/agents";
+
+    const MyAgentSchema = z.object({ guideposts: z.array(z.object({ guidepost: z.enum(["Rising Fixed Costs", "Deregulation / New Rules", "Predictable Biases in Competition", "Incumbent Response Lags", "Attractor States"]), relevant: z.enum(["Yes", "No"]), explanation: z.string() })) });
+    const myAgent = new Agent({
+    name: "My agent",
+    instructions: `You are a helpful assistant.You are an industry strategy analyst. Your task is to evaluate a specific business opportunity through the lens of Rumelt’s 5 Guideposts of Industry Dynamics from Good Strategy/Bad Strategy by Richard Rumelt. These guideposts signal industry change, competitive shifts, and structural dynamics that create strategic opportunities. The five guideposts to evaluate are:
+    Rising Fixed Costs
+    Deregulation / New Rules
+    Predictable Biases in Competition
+    Incumbent Response Lags
+    Attractor States
+    For each guidepost:
+    Determine whether it is relevant in the current industry context (Yes/No).  If relevant, explain how it affects the competitive landscape, and how it strengthens or shapes the opportunity space. If not relevant, explain why not.`,
+    model: "gpt-4.1",
+    outputType: MyAgentSchema,
+    modelSettings: {
+        temperature: 1,
+        topP: 1,
+        maxTokens: 2048,
+        store: true
+    }
+    });
+
+    type WorkflowInput = { input_as_text: string };
+
+
+    // Main code entrypoint
+    export const runWorkflow = async (workflow: WorkflowInput) => {
+    return await withTrace("Rumelt’s 5", async () => {
+        const conversationHistory: AgentInputItem[] = [
+        { role: "user", content: [{ type: "input_text", text: workflow.input_as_text }] }
+        ];
+        const runner = new Runner({
+        traceMetadata: {
+            __trace_source__: "agent-builder",
+            workflow_id: "wf_695fbfe2ef7c819095ccc1da990beb15096e9a6a43a72675"
+        }
+        });
+        const myAgentResultTemp = await runner.run(
+        myAgent,
+        [
+            ...conversationHistory
+        ]
+        );
+        conversationHistory.push(...myAgentResultTemp.newItems.map((item) => item.rawItem));
+
+        if (!myAgentResultTemp.finalOutput) {
+            throw new Error("Agent result is undefined");
+        }
+
+        const myAgentResult = {
+        output_text: JSON.stringify(myAgentResultTemp.finalOutput),
+        output_parsed: myAgentResultTemp.finalOutput
+        };
+        return myAgentResult;
+    });
+    }
+    {
+    "type": "object",
+    "properties": {
+        "guideposts": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+            "guidepost": {
+                "type": "string",
+                "enum": [
+                "Rising Fixed Costs",
+                "Deregulation / New Rules",
+                "Predictable Biases in Competition",
+                "Incumbent Response Lags",
+                "Attractor States"
+                ],
+                "description": "The name of the guidepost.",
+                "default": ""
+            },
+            "relevant": {
+                "type": "string",
+                "enum": [
+                "Yes",
+                "No"
+                ],
+                "description": "Is this guidepost relevant in the current industry context?",
+                "default": ""
+            },
+            "explanation": {
+                "type": "string",
+                "description": "If relevant, explain how the guidepost affects the competitive landscape and strategic opportunity; if not, explain why it is not relevant.",
+                "default": ""
+            }
+            },
+            "required": [
+            "guidepost",
+            "relevant",
+            "explanation"
+            ],
+            "additionalProperties": false
+        },
+        "description": "Analysis of each of Rumelt's 5 Guideposts as applied to the business opportunity.",
+        "default": []
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "guideposts"
+    ],
+    "title": "rumelt_5_guideposts_analysis"
+    }
